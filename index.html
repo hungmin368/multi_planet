@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#03142f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="data:,">
+<title>🛸 乘法星球大冒險</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+    background:linear-gradient(180deg,#3d1e6d 0%,#5b2a9e 45%,#8a46c9 100%) fixed;
+    display:flex;justify-content:center;align-items:flex-start;
+    padding:14px 12px 30px;position:relative;overflow-x:hidden;
+  }
+  /* 背景星星 */
+  .bgstar{position:fixed;border-radius:50%;background:#fff;opacity:.5;animation:twinkle 3s ease-in-out infinite;pointer-events:none;z-index:0}
+  @keyframes twinkle{0%,100%{opacity:.15;transform:scale(.8)}50%{opacity:.8;transform:scale(1.2)}}
+  #app{width:100%;max-width:460px;position:relative;z-index:1}
+  .screen{
+    display:none;background:rgba(255,255,255,.96);border-radius:26px;
+    box-shadow:0 22px 60px rgba(20,0,60,.5);
+    padding:24px 20px 26px;animation:fadeIn .35s ease;
+  }
+  .screen.active{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+  /* ---------- 首頁 ---------- */
+  .ufo{font-size:3.2rem;text-align:center;display:block;animation:floaty 2.6s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+  #screen-home h1{font-size:clamp(1.7rem,7vw,2.3rem);text-align:center;color:#4a1d96;letter-spacing:2px}
+  .ready{text-align:center;color:#e65100;font-weight:900;font-size:1.25rem;margin:6px 0 14px;letter-spacing:6px}
+  .mission{
+    background:linear-gradient(135deg,#fff3e0,#ffe9f2);border:2px dashed #ffb74d;border-radius:18px;
+    padding:12px 16px;margin-bottom:14px;color:#6d4c41;font-weight:700;font-size:.98rem;line-height:1.7;text-align:center;
+  }
+  .mission b{color:#e65100}
+  .home-badges{display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+  .badge{background:#f3e8ff;color:#6a1b9a;border-radius:999px;padding:7px 14px;font-weight:800;font-size:.92rem}
+  .badge.dexbadge{background:#e0f2f1;color:#00695c}
+  .badge.tokenbadge{background:#fff8e1;color:#e65100}
+  .admin-line{color:#9e9e9e;font-size:.88rem}
+  .hud-chips{display:flex;gap:5px;flex-wrap:wrap}
+  .hud-icons{display:flex;gap:4px;margin-left:auto}
+  .token-summary{background:#e0f2f1;border:2px dashed #4db6ac;border-radius:16px;padding:12px;margin:8px 0 10px;color:#004d40;font-weight:700;text-align:center;line-height:1.7}
+  .token-summary b{color:#e65100;font-size:1.2rem}
+  .slot-mode{text-align:center;font-weight:900;color:#00897b;margin-bottom:6px}
+  #pw-input{display:block;margin:10px auto 0;width:210px;font-size:1.6rem;text-align:center;letter-spacing:10px;border:2px solid #b39ddb;border-radius:14px;padding:10px 4px;outline:none}
+  #pw-input:focus{border-color:#7c4dff}
+  .pw-err{color:#c62828;font-weight:800;text-align:center;min-height:1.5rem;margin-top:6px}
+  .dex-reset{display:block;margin:10px auto 0;padding:10px 26px;font-size:.95rem;font-weight:900;color:#c62828;background:#ffebee;border:none;border-radius:999px;cursor:pointer}
+  .dex-reset.arm{background:#ffcdd2}
+  .btn-big{
+    width:100%;padding:16px;font-size:1.35rem;font-weight:900;color:#fff;letter-spacing:3px;
+    background:linear-gradient(135deg,#ff7eb3,#ff9a56 60%,#ffb347);
+    border:none;border-radius:999px;cursor:pointer;
+    box-shadow:0 6px 0 rgba(230,81,0,.4);transition:transform .08s;
+  }
+  .btn-big:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(230,81,0,.4)}
+  .btn-line{
+    width:100%;margin-top:10px;padding:11px;font-size:1rem;font-weight:800;color:#7c4dff;
+    background:#fff;border:2px solid #d1c4e9;border-radius:999px;cursor:pointer;
+  }
+  .footnote{text-align:center;color:rgba(255,255,255,.75);font-size:.78rem;margin-top:14px;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+
+  /* ---------- 遊戲中 ---------- */
+  .hud{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .hud-item{background:#ede7f6;color:#4527a0;font-weight:800;border-radius:999px;padding:6px 12px;font-size:.92rem;white-space:nowrap}
+  .hud-item b{font-size:1.08rem;color:#6a1b9a}
+  .icon-btn{background:#ede7f6;border:none;border-radius:999px;padding:6px 10px;font-size:1rem;cursor:pointer;font-weight:800;color:#4527a0}
+  .progress-wrap{margin:10px 0 2px}
+  .progress-label{display:flex;justify-content:space-between;font-size:.85rem;color:#7e57c2;font-weight:800;margin-bottom:3px}
+  .bar{height:14px;background:#ece5f8;border-radius:999px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,.08)}
+  .bar-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#ffd54f,#ff9800,#ff7043);transition:width .4s}
+  .timer-row{display:flex;justify-content:center;align-items:baseline;gap:8px;margin:8px 0 0}
+  #timer{font-size:2.5rem;font-weight:900;min-width:120px;text-align:center;font-family:ui-monospace,Menlo,monospace}
+  .timer-cap{font-size:.95rem;color:#9575cd;font-weight:800}
+  .t-fast{color:#2e7d32}.t-ok{color:#1565c0}.t-slow{color:#ef6c00}.t-bad{color:#c62828;animation:pulse .6s ease-in-out infinite alternate}
+  @keyframes pulse{from{transform:scale(1)}to{transform:scale(1.1)}}
+
+  .red-badge{
+    display:none;margin:6px auto 0;width:fit-content;background:#ffebee;color:#c62828;
+    border:2px solid #ffcdd2;border-radius:999px;padding:4px 14px;font-weight:900;font-size:.9rem;animation:pulse 1s ease-in-out infinite alternate;
+  }
+  .doris-badge{
+    display:none;margin:6px auto 0;width:fit-content;
+    background:linear-gradient(135deg,#fce4ec,#f3e5f5);color:#ad1457;
+    border:2px solid #f8bbd0;border-radius:999px;padding:4px 14px;font-weight:900;font-size:.9rem;
+    animation:sparkle 1.4s ease-in-out infinite;
+  }
+  @keyframes sparkle{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(240,98,146,.5)}50%{transform:scale(1.06);box-shadow:0 0 12px 4px rgba(240,98,146,.55)}}
+  .question{
+    text-align:center;font-size:clamp(2.4rem,11vw,3.1rem);font-weight:900;
+    color:#283593;margin:8px 0 4px;letter-spacing:2px;font-family:ui-monospace,Menlo,monospace;
+  }
+  .question.red{color:#d32f2f;text-shadow:0 0 0 #b71c1c;animation:wob 1.2s ease-in-out infinite}
+  @keyframes wob{0%,100%{transform:rotate(-.6deg)}50%{transform:rotate(.6deg)}}
+
+  .answer-display{
+    width:min(300px,84%);margin:0 auto;text-align:center;
+    font-size:clamp(3rem,14vw,3.9rem);font-weight:900;min-height:4.5rem;
+    font-family:ui-monospace,Menlo,monospace;color:#283593;
+    border-bottom:5px dashed #c5cae9;
+  }
+  .answer-display:empty::before{content:"？";opacity:.22}
+  .answer-display.filled{border-bottom-style:solid;border-color:#7c4dff}
+  .answer-display.shake{animation:shake .4s}
+  @keyframes shake{
+    10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}
+    30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}
+  }
+  .feedback{text-align:center;min-height:1.8rem;margin-top:9px;font-weight:800;font-size:1rem}
+  .feedback.bad{color:#e53935}
+  .feedback.warn{color:#ef6c00}
+  .feedback.good{color:#43a047}
+
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .key{
+    height:58px;font-size:1.5rem;font-weight:800;background:#fff;color:#37374f;
+    border:2px solid #e4e1f0;border-radius:16px;cursor:pointer;
+    box-shadow:0 4px 0 #e4e1f0;transition:transform .06s, box-shadow .06s;
+  }
+  .key:active{transform:translateY(3px);box-shadow:0 1px 0 #e4e1f0}
+  .key.func{background:#fff3e0;border-color:#ffe0b2;color:#ef6c00;box-shadow:0 4px 0 #ffe0b2}
+  .key.func:active{box-shadow:0 1px 0 #ffe0b2}
+  .key.submit{
+    grid-column:1/-1;height:56px;font-size:1.22rem;color:#fff;letter-spacing:2px;
+    background:linear-gradient(135deg,#66bb6a,#43e97b);border:none;
+    box-shadow:0 4px 0 rgba(46,125,50,.5);
+  }
+  .key.submit:active{box-shadow:0 1px 0 rgba(46,125,50,.5)}
+
+  /* ---------- 過場 overlay ---------- */
+  .overlay{
+    position:fixed;inset:0;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:10px;
+    background:rgba(30,10,70,.55);opacity:0;visibility:hidden;transition:opacity .18s;
+    pointer-events:none;z-index:60;
+  }
+  .overlay.show{opacity:1;visibility:visible}
+  .overlay-card{
+    background:#fff;border-radius:24px;padding:20px 36px;
+    font-size:1.8rem;font-weight:900;text-align:center;max-width:86vw;
+  }
+  .overlay-card.good{color:#2e7d32}
+  .overlay-card.bad{color:#c62828;font-size:1.4rem}
+  .overlay-sub{color:#fff;font-weight:800;font-size:1rem;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .overlay.show .overlay-card{animation:pop .32s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+
+  /* ---------- 完成畫面 ---------- */
+  #screen-done h1{text-align:center;color:#4a1d96;margin-bottom:2px}
+  .done-stars{text-align:center;font-size:1.15rem;font-weight:900;color:#f57f17;margin-bottom:6px}
+  .total{text-align:center;color:#616161;font-weight:700}
+  #final-score{font-size:2.9rem;font-weight:900;color:#7c4dff}
+  .record-banner{
+    margin:10px auto;padding:10px 14px;border-radius:14px;text-align:center;
+    background:#f3e8ff;color:#6a1b9a;font-weight:700;font-size:.98rem;
+  }
+  .record-banner.new{background:#fff8e1;border:2px dashed #ffb300;color:#e65100;font-size:1.05rem}
+  #done-stats{text-align:center;color:#757575;font-weight:600;margin-bottom:10px}
+
+  .slot{
+    background:linear-gradient(160deg,#4527a0,#7b1fa2);border-radius:20px;padding:16px 14px 14px;
+    margin:6px 0 4px;box-shadow:inset 0 0 24px rgba(0,0,0,.35);
+  }
+  .slot-title{color:#ffe082;text-align:center;font-weight:900;letter-spacing:3px;font-size:1.05rem;margin-bottom:10px}
+  .reels{display:flex;gap:10px;justify-content:center}
+  .reel{
+    width:86px;height:86px;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.4);
+    border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  }
+  .reel img{width:76px;height:76px;image-rendering:pixelated}
+  .reel.stopped{border-color:#ffe082}
+  .slot-row{display:flex;gap:10px;margin-top:12px}
+  .btn-spin{
+    flex:1;padding:13px;font-size:1.15rem;font-weight:900;color:#4a148c;letter-spacing:2px;
+    background:linear-gradient(135deg,#ffe082,#ffca28);border:none;border-radius:999px;cursor:pointer;
+    box-shadow:0 4px 0 rgba(130,77,0,.5);
+  }
+  .btn-spin:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(130,77,0,.5)}
+  .btn-spin:disabled{filter:grayscale(.7);opacity:.6;cursor:not-allowed}
+  .slot-left{background:rgba(255,255,255,.2);color:#fff;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 16px;font-weight:900;white-space:nowrap}
+  .slot-hint{color:rgba(255,255,255,.85);text-align:center;font-size:.82rem;margin-top:8px;font-weight:600}
+  #slot-result{
+    display:none;margin-top:12px;background:#fff;border-radius:18px;padding:14px;
+    text-align:center;animation:pop .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  #slot-result img{width:96px;height:96px;image-rendering:pixelated}
+  .sr-name{font-size:1.5rem;font-weight:900;color:#4a148c}
+  .sr-new{display:inline-block;background:#ff5252;color:#fff;border-radius:999px;padding:3px 12px;font-weight:900;font-size:.85rem;margin-left:8px;vertical-align:middle;animation:pulse .8s infinite alternate}
+  .sr-tier{color:#e65100;font-weight:800;margin-top:2px}
+
+  .done-btns{display:flex;gap:10px;margin-top:14px}
+  .btn-green{
+    flex:1;padding:14px;font-size:1.15rem;font-weight:900;color:#fff;letter-spacing:2px;
+    background:linear-gradient(135deg,#43e97b,#38f9d7);border:none;border-radius:999px;cursor:pointer;
+    box-shadow:0 5px 0 rgba(27,94,32,.4);
+  }
+  .btn-white{
+    flex:1;padding:14px;font-size:1.05rem;font-weight:800;color:#6a1b9a;letter-spacing:2px;
+    background:#fff;border:2px solid #d1c4e9;border-radius:999px;cursor:pointer;
+  }
+  .btn-green:active,.btn-white:active{transform:translateY(2px)}
+
+  /* ---------- modal ---------- */
+  .modal{
+    position:fixed;inset:0;display:none;justify-content:center;align-items:center;
+    background:rgba(20,5,50,.6);z-index:70;padding:16px;
+  }
+  .modal.show{display:flex}
+  .modal-box{
+    background:#fffdf7;border-radius:22px;padding:18px;max-width:430px;width:100%;
+    max-height:86vh;overflow:auto;animation:pop .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .modal-box h2{text-align:center;color:#4a1d96;margin-bottom:10px;font-size:1.25rem}
+  .map-legend{display:flex;gap:12px;justify-content:center;font-size:.82rem;color:#757575;font-weight:700;margin-bottom:8px}
+  .map-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
+  .map-head{font-size:.62rem;color:#9575cd;text-align:center;font-weight:800}
+  .map-cell{aspect-ratio:1;border-radius:4px;background:#ece5f8;display:flex;align-items:center;justify-content:center;font-size:.62rem}
+  .map-cell.done{background:#ffd54f}
+  .map-cell.wrong{background:#ef5350}
+  .map-cell.now{background:#b39ddb;outline:2px solid #7c4dff}
+  .dex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .dex-card{
+    background:#f5f0ff;border-radius:14px;padding:8px 4px;text-align:center;position:relative;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+  }
+  .dex-card img{width:58px;height:58px;image-rendering:pixelated}
+  .dex-card.locked img{filter:brightness(0) saturate(0);opacity:.45}
+  .dex-name{font-size:.78rem;font-weight:900;color:#4a148c;white-space:nowrap}
+  .dex-count{font-size:.7rem;color:#e65100;font-weight:800}
+  .dex-tier{font-size:.6rem;color:#9e7cd8;font-weight:800}
+  .modal-close{
+    display:block;margin:12px auto 0;padding:10px 34px;font-size:1rem;font-weight:900;color:#fff;
+    background:#7c4dff;border:none;border-radius:999px;cursor:pointer;
+  }
+  .modal-text{text-align:center;color:#6d4c41;font-weight:700;line-height:1.7;margin:8px 0 4px}
+  .modal-btns{display:flex;gap:10px;margin-top:12px}
+  .mbtn{flex:1;padding:12px;border-radius:999px;border:none;font-weight:900;font-size:1rem;cursor:pointer}
+  .mbtn.red{background:#ef5350;color:#fff}
+  .mbtn.gray{background:#ece5f8;color:#4527a0}
+
+  @media (max-width:380px){
+    .screen{padding:18px 13px 22px}
+    .key{height:52px;font-size:1.35rem}
+    .keypad{gap:8px}
+    .reel{width:74px;height:74px}.reel img{width:66px;height:66px}
+  }
+
+/* V9: 個人歷史紀錄 */
+#history-modal .modal-box{width:min(920px,94vw);max-height:88vh;overflow:auto;text-align:left}
+.history-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.history-stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:12px;text-align:center}
+.history-stat b{display:block;font-size:1.35rem;color:#ffe66d;margin-top:4px}
+.history-list{display:grid;gap:8px;margin-top:12px}
+.history-row{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr .7fr;gap:8px;align-items:center;background:rgba(255,255,255,.06);border-radius:12px;padding:10px;font-size:.9rem}
+.history-row.head{font-weight:800;background:rgba(124,77,255,.25)}
+.reward-token{color:#ffe66d;font-weight:900}
+@media(max-width:650px){.history-grid{grid-template-columns:repeat(2,1fr)}.history-row{grid-template-columns:1.15fr .85fr .8fr .7fr}.history-row .hide-sm{display:none}}
+
+
+/* V11 official 48-character artwork */
+#dex-modal .creature-frame{width:118px;height:118px;margin:4px auto 10px;border-radius:26px;overflow:hidden;position:relative;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 8px 22px rgba(0,0,0,.18)}
+#dex-modal .creature-img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;image-rendering:auto!important;transition:filter .25s,transform .25s}
+#dex-modal .dex-card.locked .creature-img{filter:brightness(0) saturate(0)!important;opacity:.72!important;transform:scale(.92)}
+#dex-modal .dex-card:not(.locked) .creature-img{filter:none!important;opacity:1!important}
+#dex-modal .dex-card{min-height:238px!important}
+#dex-modal .dex-card.locked .creature-frame:after{content:'?';position:absolute;inset:0;display:grid;place-items:center;color:#fff3a7;font-size:2.6rem;font-weight:1000;text-shadow:0 3px 10px #000}
+@media(max-width:600px){#dex-modal .creature-frame{width:88px;height:88px;border-radius:20px}#dex-modal .dex-card{min-height:205px!important}}
+</style>
+
+<style id="planet-v4-theme">
+:root{
+ --space:#03142f; --space2:#062b59; --panel:#082b55; --panel2:#0b3d73;
+ --cyan:#53c9ff; --gold:#ffd76a; --cream:#fff6d8; --muted:#a9c8e8;
+}
+html,body{background:
+ radial-gradient(circle at 18% 12%,rgba(75,119,255,.28),transparent 28%),
+ radial-gradient(circle at 82% 22%,rgba(183,95,255,.18),transparent 26%),
+ linear-gradient(180deg,#020b1f 0%,#041b3d 45%,#03142f 100%) fixed!important}
+body{padding:12px 10px 30px!important;color:var(--cream)}
+body:before,body:after{content:"";position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(.2px)}
+body:before{width:150px;height:150px;right:-50px;top:9%;background:radial-gradient(circle at 35% 35%,#8b79ff,#44298a 55%,#16134e 72%);box-shadow:0 0 45px #6545d966}
+body:after{width:100px;height:100px;left:-35px;bottom:13%;background:radial-gradient(circle at 35% 35%,#56b8ff,#1853a0 58%,#09265d 75%);box-shadow:0 0 38px #3fa9ff55}
+#app{max-width:760px!important}
+.screen{background:linear-gradient(165deg,rgba(7,35,72,.97),rgba(3,20,47,.98))!important;
+ border:1px solid rgba(103,196,255,.28)!important;border-radius:28px!important;
+ box-shadow:0 24px 70px rgba(0,0,0,.48),inset 0 0 45px rgba(51,143,255,.05)!important;color:var(--cream)}
+#screen-home{padding-top:30px!important}
+.ufo{font-size:4rem!important;filter:drop-shadow(0 0 18px #66cfff88)}
+#screen-home h1,#screen-done h1{color:#fff3c4!important;text-shadow:0 3px 0 #173f75,0 0 18px #ffd86c55}
+.ready{color:var(--gold)!important}
+.mission{background:rgba(6,42,82,.78)!important;border:1px solid #3d8ac7!important;color:#d9ecff!important}
+.mission b{color:var(--gold)!important}
+.badge,.hud-item,.icon-btn{background:rgba(13,60,111,.9)!important;color:#dff3ff!important;border:1px solid rgba(83,201,255,.28)!important}
+.badge b,.hud-item b{color:var(--gold)!important}
+.badge.dexbadge,.badge.tokenbadge{background:rgba(12,55,102,.95)!important;color:#fff0b2!important}
+.btn-big{color:#09224a!important;background:linear-gradient(180deg,#ffe58b,#ffc952)!important;box-shadow:0 5px 0 #b97813,0 0 24px #ffd86c33!important}
+.btn-line{color:#dff3ff!important;background:rgba(9,50,96,.92)!important;border:1px solid #3278b4!important}
+.progress-label,.timer-cap{color:#a9d8ff!important}
+.bar{background:#0a284b!important;border:1px solid #2d6da6}
+.bar-fill{background:linear-gradient(90deg,#63e0ff,#ffd966)!important}
+.question{color:#fff7db!important;background:linear-gradient(180deg,#061a38,#082b55);border:2px solid #1c6fae;border-radius:24px;padding:22px 8px;margin-top:12px!important;box-shadow:inset 0 0 30px #00152f,0 0 24px #2d8ad233}
+.answer-display{color:#fff4c8!important;border-color:#2e79b5!important}
+.key{background:linear-gradient(180deg,#1269b4,#0a4a8c)!important;color:#fff!important;border-color:#3ca7e9!important;box-shadow:0 4px 0 #052c5d!important}
+.key.func{background:linear-gradient(180deg,#385e91,#24436e)!important;color:#d9ecff!important;border-color:#628fbd!important}
+.key.submit{background:linear-gradient(180deg,#55cfff,#2387cf)!important;box-shadow:0 4px 0 #075589!important}
+.feedback.good{color:#8af7ca!important}.feedback.bad{color:#ff8f9a!important}
+.record-banner,.token-summary{background:rgba(8,47,91,.9)!important;color:#dff3ff!important;border:1px solid #2e7dbb!important}
+.done-stars{color:var(--gold)!important}.total,#done-stats{color:#b9d4ec!important}
+.modal{background:rgba(0,7,24,.78)!important;backdrop-filter:blur(8px)}
+.modal-box{background:linear-gradient(165deg,#082b55,#031b3d)!important;color:#eaf6ff!important;border:1px solid #347db7!important}
+.modal-box h2{color:#fff1b8!important}
+.dex-grid{grid-template-columns:repeat(4,1fr)!important;gap:10px!important}
+.dex-card{background:linear-gradient(180deg,rgba(14,61,111,.96),rgba(5,33,68,.96))!important;border:1px solid #2b73ad!important;border-radius:16px!important;padding:10px 5px!important;min-height:118px;position:relative;overflow:hidden}
+.dex-card:before{content:"";position:absolute;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#e9e1c844,#8e73ff12 60%,transparent 62%);left:50%;top:9px;transform:translateX(-50%)}
+.dex-card img{display:none!important}
+.dex-name{color:#eef8ff!important;position:relative}
+.dex-count,.dex-tier{color:#9cc9ee!important;position:relative}
+.dex-card.locked .dex-name{color:#fff0a8!important}
+.dex-card.locked:after{content:"★";position:absolute;right:7px;top:5px;color:#ffe074;font-size:.8rem}
+.planet-creature{font-size:3rem;line-height:1;display:block;position:relative;margin:4px auto 8px;filter:drop-shadow(0 0 10px #5dcfff55)}
+.planet-creature.locked{filter:brightness(0) drop-shadow(0 0 5px #5dcfff88);opacity:.95}
+.unlock-cost{font-size:.72rem;color:#ffd86c;font-weight:900;margin-top:3px}
+.planet-tabs{display:flex;gap:6px;overflow-x:auto;margin:8px 0 14px;padding-bottom:4px}
+.planet-tab{border:1px solid #2d6ea8;background:#082d59;color:#cde8ff;border-radius:999px;padding:7px 10px;white-space:nowrap;font-weight:800}
+.planet-tab.active{background:#ffd86c;color:#09234a;border-color:#ffd86c}
+.footnote{color:#8fb5d8!important}
+@media (min-width:700px){.screen{padding:28px 34px 32px!important}.key{height:64px}.dex-grid{grid-template-columns:repeat(6,1fr)!important}}
+</style>
+
+
+<style id="v5-patch">
+#dex-modal .modal-box{
+ width:min(94vw,1000px)!important; max-width:1000px!important;
+ height:min(90vh,820px)!important; max-height:90vh!important;
+ padding:26px 24px 24px!important; position:relative!important; overflow:auto!important;
+}
+#dex-modal .dex-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important}
+#dex-modal .dex-card{min-height:180px!important;padding:18px 10px!important}
+#dex-modal .planet-creature{font-size:4.3rem!important;margin:10px auto 14px!important}
+#dex-modal .dex-name{font-size:1rem!important}
+#dex-modal .dex-tier,#dex-modal .dex-count,#dex-modal .unlock-cost{font-size:.82rem!important}
+#dex-close-v5{
+ position:sticky; float:right; top:0; right:0; z-index:20;
+ width:44px;height:44px;border-radius:50%;border:1px solid #68cfff;
+ background:#082d59;color:#fff;font-size:1.8rem;font-weight:900;line-height:38px;
+ box-shadow:0 4px 14px #0007;cursor:pointer;
+}
+.question.review-red{color:#ff5c68!important;border-color:#ff5c68!important;
+ text-shadow:0 0 16px #ff304b66!important;box-shadow:inset 0 0 30px #3b0713,0 0 24px #ff304b33!important}
+@media(max-width:560px){
+ #dex-modal .modal-box{width:96vw!important;padding:20px 12px!important}
+ #dex-modal .dex-grid{gap:8px!important}
+ #dex-modal .dex-card{min-height:150px!important;padding:12px 5px!important}
+ #dex-modal .planet-creature{font-size:3.2rem!important}
+}
+</style>
+
+<style id="v7-clean-patch">
+#dex-modal .modal-box{
+  width:min(96vw,1040px)!important;max-width:1040px!important;
+  height:min(92vh,860px)!important;max-height:92vh!important;
+  padding:28px 24px 24px!important;position:relative!important;overflow:auto!important;
+}
+#dex-modal .dex-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important}
+#dex-modal .dex-card{min-height:185px!important;padding:18px 10px!important}
+#dex-modal .planet-creature{font-size:4.5rem!important;margin:10px auto 14px!important}
+#dex-close{
+  position:sticky;float:right;top:0;right:0;z-index:30;width:46px;height:46px;
+  border-radius:50%;border:1px solid #68cfff;background:#082d59;color:#fff;
+  font-size:1.9rem;font-weight:900;line-height:40px;box-shadow:0 4px 14px #0008;cursor:pointer
+}
+.question.red{
+  color:#ff5364!important;border-color:#ff5364!important;
+  text-shadow:0 0 16px rgba(255,55,80,.55)!important;
+  box-shadow:inset 0 0 30px #3b0713,0 0 24px rgba(255,48,75,.3)!important
+}
+@media(max-width:560px){
+  #dex-modal .modal-box{width:97vw!important;padding:20px 10px!important}
+  #dex-modal .dex-grid{gap:8px!important}
+  #dex-modal .dex-card{min-height:155px!important;padding:12px 5px!important}
+  #dex-modal .planet-creature{font-size:3.25rem!important}
+}
+</style>
+
+
+<style id="v24-final-ui">
+#btn-dex-home{display:block!important;visibility:visible!important;opacity:1!important}
+#dex-modal .dex-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#dex-modal .creature-img{display:block!important;object-fit:contain!important;object-position:center!important;transform:none!important}
+#dex-modal .dex-card.locked .creature-img{display:block!important;filter:brightness(0) saturate(100%)!important;opacity:.78!important;transform:scale(.88)!important}
+@media(max-width:600px){#dex-modal .dex-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#dex-modal .creature-frame{width:min(132px,92%)!important}#dex-modal .dex-card{min-height:220px!important}}
+</style>
+<style id="v25-dex-authoritative">
+/* V25: single authoritative DEX layout */
+#btn-dex-home{display:block!important;visibility:visible!important;opacity:1!important}
+#dex-modal .modal-box{width:min(96vw,1040px)!important;max-width:1040px!important;height:min(92vh,860px)!important;max-height:92vh!important;padding:24px!important;overflow:auto!important;position:relative!important}
+#dex-modal .dex-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important}
+#dex-modal .dex-card{min-width:0!important;min-height:240px!important;padding:14px 10px!important;overflow:hidden!important}
+#dex-modal .creature-frame{width:min(170px,92%)!important;aspect-ratio:1/1!important;height:auto!important;margin:4px auto 10px!important;border-radius:24px!important;overflow:visible!important;display:grid!important;place-items:center!important;padding:6px!important;box-sizing:border-box!important;background:rgba(255,255,255,.08)!important}
+#dex-modal .creature-img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;image-rendering:auto!important;transform:none!important;transition:filter .25s,opacity .25s!important}
+#dex-modal .dex-card.locked .creature-img{filter:brightness(0) saturate(0)!important;opacity:.78!important;transform:none!important}
+#dex-modal .dex-card:not(.locked) .creature-img{filter:none!important;opacity:1!important;transform:none!important}
+#dex-modal .dex-card.locked .creature-frame:after{content:'?';position:absolute;display:none!important}
+#dex-modal .dex-name{font-size:1rem!important;line-height:1.25!important;overflow-wrap:anywhere!important;color:#eef8ff!important}
+#dex-modal .dex-tier,#dex-modal .dex-count,#dex-modal .unlock-cost{font-size:.82rem!important;line-height:1.35!important;color:#9cc9ee!important}
+#dex-modal .unlock-cost{color:#ffe082!important;font-weight:900!important}
+@media(max-width:600px){#dex-modal .modal-box{width:97vw!important;padding:18px 10px!important}#dex-modal .dex-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}#dex-modal .dex-card{min-height:220px!important;padding:10px 5px!important}#dex-modal .creature-frame{width:min(145px,94%)!important;padding:4px!important;border-radius:18px!important}#dex-modal .dex-name{font-size:.84rem!important}#dex-modal .dex-tier,#dex-modal .dex-count,#dex-modal .unlock-cost{font-size:.72rem!important}}
+</style>
+
+
+
+
+
+<style id="v29-dex-final">
+#dex-modal .dex-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}
+#dex-modal .dex-card{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;min-width:0!important;padding:10px 7px!important;overflow:hidden!important}
+#dex-modal .creature-frame{width:100%!important;height:150px!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;overflow:visible!important;background:transparent!important}
+#dex-modal .dex-card img,#dex-modal .dex-card img.creature-img{display:block!important;width:124%!important;height:124%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:center!important;image-rendering:auto!important}
+#dex-modal .dex-card.locked img,#dex-modal .dex-card.locked img.creature-img{display:block!important;filter:brightness(0) saturate(100%)!important;opacity:.82!important}
+#dex-modal .dex-number{display:block!important;font-size:.72rem!important;font-weight:900!important;opacity:.72!important;margin-top:3px!important}
+#dex-modal .dex-card.locked .dex-name,#dex-modal .dex-card.locked .dex-tier{display:none!important}
+#dex-modal .dex-card.unlocked .dex-name{display:block!important;font-size:.9rem!important;font-weight:900!important;margin-top:1px!important}
+#dex-modal .dex-card.unlocked .dex-tier{display:block!important;font-size:.68rem!important;font-weight:800!important}
+#dex-modal .unlock-cost,#dex-modal .dex-count{display:block!important;font-size:.8rem!important;font-weight:900!important;margin-top:4px!important}
+@media(max-width:600px){#dex-modal .dex-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#dex-modal .creature-frame{height:140px!important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ 首頁 ============ -->
+  <section id="screen-home" class="screen active">
+    <span class="ufo">🛸</span>
+    <h1>乘法星球大冒險</h1>
+    <div class="ready">準備出發！</div>
+    <div class="mission">
+      🚀 你的任務：征服 <b>2×1 到 12×12</b><br>
+      一共 <b>132 顆乘法星星</b>，全部答對就完成冒險！<br>
+      ⚡ 答越快分越高，答錯會 <b>−1 分</b>，<br>
+      錯過的題目會變成<b>紅字</b>再回來找你哦！
+    </div>
+    <div class="home-badges">
+      <span class="badge">🏆 最高分：<span id="home-best">0</span></span>
+      <span class="badge dexbadge">📖 圖鑑 <span id="home-dex">0</span>/<span id="home-dex-total">48</span></span>
+      <span class="badge tokenbadge">⭐ 星星 <span id="home-tokens">0</span></span>
+    </div>
+    <button id="btn-start" class="btn-big">🚀 開始挑戰！</button>
+    
+    <button id="btn-dex-home" class="btn-line">📖 星球圖鑑</button>
+    <button id="btn-history-home" class="btn-line">📊 我的紀錄</button>
+    
+    <div class="footnote">🔒 紀錄僅存於本裝置，無需登入或連線<br><small>V25 · 透明 PNG 完整圖鑑版</small></div>
+  </section>
+
+  <!-- ============ 遊戲中 ============ -->
+  <section id="screen-game" class="screen">
+    <header class="hud">
+      <div class="hud-chips">
+        <div class="hud-item">⭐ <b id="stars">0</b><span id="stars-total">/132</span></div>
+        <div class="hud-item">💰 <b id="score">0</b> 分</div><div class="hud-item">🔥 Combo <b id="combo">0</b></div>
+        <div class="hud-item">⭐ 餘額 <b id="tokens">0</b></div>
+      </div>
+      <div class="hud-icons">
+        <button id="btn-map" class="icon-btn" title="星星地圖">🗺️</button>
+        <button id="btn-quit" class="icon-btn" title="離開">🏠</button>
+        <button id="btn-mute" class="icon-btn" title="音效">🔊</button>
+      </div>
+    </header>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>冒險進度</span><span id="bar-pct">0%</span></div>
+      <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+    </div>
+
+    <div class="timer-row">
+      <span class="timer-cap">⏱️ 這題用了</span>
+      <div id="timer" class="t-ok">0.0<small style="font-size:1.1rem"> 秒</small></div>
+    </div>
+    <div id="red-badge" class="red-badge">🔴 錯過的題目回來啦！答對它！</div>
+    <div class="question" id="q-wrap"><span id="q-text">2 × 1</span> = ?</div>
+    <div id="answer-display" class="answer-display"></div>
+    <div id="feedback"></div>
+
+    <div class="keypad" id="keypad">
+      <button class="key num" data-k="1">1</button>
+      <button class="key num" data-k="2">2</button>
+      <button class="key num" data-k="3">3</button>
+      <button class="key num" data-k="4">4</button>
+      <button class="key num" data-k="5">5</button>
+      <button class="key num" data-k="6">6</button>
+      <button class="key num" data-k="7">7</button>
+      <button class="key num" data-k="8">8</button>
+      <button class="key num" data-k="9">9</button>
+      <button class="key func" data-k="B" aria-label="倒退">⌫</button>
+      <button class="key num" data-k="0">0</button>
+      <button class="key func" data-k="C" aria-label="清除">C</button>
+      <button class="key submit" data-k="OK">🚀 送出答案</button>
+    </div>
+  </section>
+
+  <!-- ============ 完成畫面 ============ -->
+  <section id="screen-done" class="screen">
+    <h1 id="done-title">🎉 星球征服成功！</h1>
+    <div class="done-stars" id="done-stars">⭐ 132 / 132 顆星星全部點亮！</div>
+    <div class="total">總分 <span id="final-score">0</span></div>
+    <div id="record-banner" class="record-banner"></div>
+    <div id="done-stats"></div>
+
+    <div id="token-summary" class="token-summary"></div>
+    
+
+    <div class="done-btns">
+      <button id="btn-again" class="btn-green">🚀 開始新的冒險</button>
+      <button id="btn-home2" class="btn-white">🏠 回首頁</button>
+    </div>
+    <button id="btn-dex-done" class="btn-line" style="margin-top:10px">📖 星球圖鑑</button>
+    <button id="btn-history-done" class="btn-line" style="margin-top:10px">📊 我的紀錄</button>
+  </section>
+
+  <!-- ============ 圖鑑解鎖小舖 ============ -->
+  
+</div>
+
+<!-- 過場 -->
+<div id="overlay" class="overlay"><div id="overlay-card" class="overlay-card"></div><div id="overlay-sub" class="overlay-sub"></div></div>
+
+<!-- 星星地圖 -->
+<div class="modal" id="map-modal">
+  <div class="modal-box">
+    <h2>🗺️ 我的星星地圖</h2>
+    <div class="map-legend"><span>🟡 已征服</span><span>🔴 錯過待補</span><span>🟣 現在這題</span><span>⚪ 還沒遇到</span></div>
+    <div class="map-grid" id="map-grid"></div>
+    <button class="modal-close" data-close="map-modal">關閉</button>
+  </div>
+</div>
+
+<!-- 圖鑑 -->
+<div class="modal" id="dex-modal">
+  <div class="modal-box">
+    <button id="dex-close" type="button" aria-label="關閉圖鑑">×</button>
+    <h2>📖 星球圖鑑</h2>
+    <div class="modal-text" id="dex-summary"></div>
+    <div class="dex-grid" id="dex-grid"></div>
+  </div>
+</div>
+
+
+<!-- 個人歷史紀錄 -->
+<div class="modal" id="history-modal">
+  <div class="modal-box">
+    <button id="history-close" type="button" aria-label="關閉紀錄" style="position:absolute;right:18px;top:12px;background:none;border:0;color:white;font-size:2rem;cursor:pointer">×</button>
+    <h2>📊 我的冒險紀錄</h2>
+    <div id="history-summary"></div>
+    <h3 style="margin:18px 0 8px">🕘 最近 10 次冒險</h3>
+    <div id="history-list" class="history-list"></div>
+  </div>
+</div>
+
+<!-- 離開確認 -->
+<div class="modal" id="quit-modal">
+  <div class="modal-box">
+    <h2>🏠 要先離開嗎？</h2>
+    <div class="modal-text">別擔心，你的進度已經自動保存，<br>下次回來可以繼續冒險！</div>
+    <div class="modal-btns">
+      <button class="mbtn gray" id="btn-quit-cancel">繼續玩</button>
+      <button class="mbtn red" id="btn-quit-ok">保存並離開</button>
+    </div>
+  </div>
+</div>
+</div>
+
+
+<script>
+'use strict';
+const DEX=[{"id":1,"img":"assets/creature-01.png","name":"星星寶","icon":"✨","planet":"星球1","cost":100,"rarity":"基本","desc":"乘法星海中的原創星球夥伴。"},{"id":2,"img":"assets/creature-02.png","name":"雲朵寶","icon":"✨","planet":"星球1","cost":100,"rarity":"基本","desc":"乘法星海中的原創星球夥伴。"},{"id":3,"img":"assets/creature-03.png","name":"芽芽球","icon":"✨","planet":"星球1","cost":100,"rarity":"基本","desc":"乘法星海中的原創星球夥伴。"},{"id":4,"img":"assets/creature-04.png","name":"火翼龍","icon":"✨","planet":"星球1","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":5,"img":"assets/creature-05.png","name":"水滴精靈","icon":"✨","planet":"星球1","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":6,"img":"assets/creature-06.png","name":"月影喵","icon":"✨","planet":"星球1","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":7,"img":"assets/creature-07.png","name":"森林梟","icon":"✨","planet":"星球1","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":8,"img":"assets/creature-08.png","name":"棉花兔","icon":"✨","planet":"星球1","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":9,"img":"assets/creature-09.png","name":"橘尾狐","icon":"✨","planet":"星球2","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":10,"img":"assets/creature-10.png","name":"熊貓寶","icon":"✨","planet":"星球2","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":11,"img":"assets/creature-11.png","name":"藍藍企鵝","icon":"✨","planet":"星球2","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":12,"img":"assets/creature-12.png","name":"葉甲龜","icon":"✨","planet":"星球2","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":13,"img":"assets/creature-13.png","name":"陽光獅","icon":"✨","planet":"星球2","cost":150,"rarity":"常見","desc":"乘法星海中的原創星球夥伴。"},{"id":14,"img":"assets/creature-14.png","name":"彩虹獨角獸","icon":"✨","planet":"星球2","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":15,"img":"assets/creature-15.png","name":"紫翼蝠","icon":"✨","planet":"星球2","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":16,"img":"assets/creature-16.png","name":"綿綿羊","icon":"✨","planet":"星球2","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":17,"img":"assets/creature-17.png","name":"森角鹿","icon":"✨","planet":"星球3","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":18,"img":"assets/creature-18.png","name":"冰羽梟","icon":"✨","planet":"星球3","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":19,"img":"assets/creature-19.png","name":"小森龍","icon":"✨","planet":"星球3","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":20,"img":"assets/creature-20.png","name":"粉粉蠑螈","icon":"✨","planet":"星球3","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":21,"img":"assets/creature-21.png","name":"星際機器人","icon":"✨","planet":"星球3","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":22,"img":"assets/creature-22.png","name":"向日葵精靈","icon":"✨","planet":"星球3","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":23,"img":"assets/creature-23.png","name":"焰尾狐","icon":"✨","planet":"星球3","cost":200,"rarity":"進階","desc":"乘法星海中的原創星球夥伴。"},{"id":24,"img":"assets/creature-24.png","name":"冰晶狐","icon":"✨","planet":"星球3","cost":250,"rarity":"稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":25,"img":"assets/creature-25.png","name":"魔法黑貓","icon":"✨","planet":"星球4","cost":250,"rarity":"稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":26,"img":"assets/creature-26.png","name":"暖暖犬","icon":"✨","planet":"星球4","cost":250,"rarity":"稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":27,"img":"assets/creature-27.png","name":"堅果鼠","icon":"✨","planet":"星球4","cost":250,"rarity":"稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":28,"img":"assets/creature-28.png","name":"彩翼蜂鳥","icon":"✨","planet":"星球4","cost":250,"rarity":"稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":29,"img":"assets/creature-29.png","name":"紫晶章魚","icon":"✨","planet":"星球4","cost":250,"rarity":"稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":30,"img":"assets/creature-30.png","name":"森林刺球","icon":"✨","planet":"星球4","cost":250,"rarity":"稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":31,"img":"assets/creature-31.png","name":"火苗寶","icon":"✨","planet":"星球4","cost":250,"rarity":"稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":32,"img":"assets/creature-32.png","name":"苔岩獸","icon":"✨","planet":"星球4","cost":250,"rarity":"稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":33,"img":"assets/creature-33.png","name":"天使雪貂","icon":"✨","planet":"星球5","cost":300,"rarity":"珍稀","desc":"乘法星海中的原創星球夥伴。"},{"id":34,"img":"assets/creature-34.png","name":"銀河喵","icon":"✨","planet":"星球5","cost":300,"rarity":"珍稀","desc":"乘法星海中的原創星球夥伴。"},{"id":35,"img":"assets/creature-35.png","name":"雷光狐","icon":"✨","planet":"星球5","cost":300,"rarity":"珍稀","desc":"乘法星海中的原創星球夥伴。"},{"id":36,"img":"assets/creature-36.png","name":"冰河水獺","icon":"✨","planet":"星球5","cost":300,"rarity":"珍稀","desc":"乘法星海中的原創星球夥伴。"},{"id":37,"img":"assets/creature-37.png","name":"花翼仙子","icon":"✨","planet":"星球5","cost":300,"rarity":"珍稀","desc":"乘法星海中的原創星球夥伴。"},{"id":38,"img":"assets/creature-38.png","name":"蒼藍飛龍","icon":"✨","planet":"星球5","cost":300,"rarity":"珍稀","desc":"乘法星海中的原創星球夥伴。"},{"id":39,"img":"assets/creature-39.png","name":"星雲寶","icon":"✨","planet":"星球5","cost":300,"rarity":"珍稀","desc":"乘法星海中的原創星球夥伴。"},{"id":40,"img":"assets/creature-40.png","name":"花冠仙人掌","icon":"✨","planet":"星球5","cost":300,"rarity":"珍稀","desc":"乘法星海中的原創星球夥伴。"},{"id":41,"img":"assets/creature-41.png","name":"烈焰鳳凰","icon":"✨","planet":"星球6","cost":300,"rarity":"珍稀","desc":"乘法星海中的原創星球夥伴。"},{"id":42,"img":"assets/creature-42.png","name":"冰晶寶","icon":"✨","planet":"星球6","cost":400,"rarity":"超稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":43,"img":"assets/creature-43.png","name":"暗影狼","icon":"✨","planet":"星球6","cost":400,"rarity":"超稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":44,"img":"assets/creature-44.png","name":"黃金神梟","icon":"✨","planet":"星球6","cost":400,"rarity":"超稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":45,"img":"assets/creature-45.png","name":"星海鯨","icon":"✨","planet":"星球6","cost":400,"rarity":"超稀有","desc":"乘法星海中的原創星球夥伴。"},{"id":46,"img":"assets/creature-46.png","name":"聖光天馬","icon":"✨","planet":"星球6","cost":500,"rarity":"傳說","desc":"乘法星海中的原創星球夥伴。"},{"id":47,"img":"assets/creature-47.png","name":"闇金星龍","icon":"✨","planet":"星球6","cost":500,"rarity":"傳說","desc":"乘法星海中的原創星球夥伴。"},{"id":48,"img":"assets/creature-48.png","name":"彩虹翼喵","icon":"✨","planet":"星球6","cost":600,"rarity":"彩虹","desc":"乘法星海中的原創星球夥伴。"}];
+const TOTAL=132;
+const K_RUN='multplanet_current_run_v8';
+const K_BEST='multplanet_best';
+const K_DEX='multplanet_dex';
+const K_DEX_SCHEMA='multplanet_dex_schema';
+const DEX_SCHEMA='48-v25-safe-default';
+const K_MUTE='multplanet_mute';
+const K_STARS='multplanet_stars_v8';
+const K_HISTORY='multplanet_history_v8';
+const K_LIFETIME_STARS='multplanet_lifetime_stars_v8';
+const K_FASTEST='multplanet_fastest_v8';
+const K_OLD_TOKENS='multplanet_tokens';
+
+const $=id=>document.getElementById(id);
+const getLS=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}};
+const setLS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const delLS=k=>{try{localStorage.removeItem(k)}catch(e){}};
+if(getLS(K_DEX_SCHEMA,'')!==DEX_SCHEMA){setLS(K_DEX_SCHEMA,DEX_SCHEMA);}
+
+let done=Array(TOTAL).fill(false);
+let wronged=Array(TOTAL).fill(false);
+let score=0, wrongCount=0, combo=0, bestCombo=0, totalMs=0;
+let curIdx=-1, input='', locked=true, qStart=0, rafId=0;
+let starsBalance=parseInt(getLS(K_STARS,getLS(K_OLD_TOKENS,'0')),10)||0;
+setLS(K_STARS,String(starsBalance));
+let muted=getLS(K_MUTE,'0')==='1';
+let actx=null;
+
+function qOf(i){return {a:Math.floor(i/12)+2,b:i%12+1}}
+function keyOf(a,b){return (a-2)*12+(b-1)}
+function doneCount(){return done.reduce((n,x)=>n+(x?1:0),0)}
+function show(name){
+  ['home','game','done'].forEach(n=>{const e=$('screen-'+n);if(e)e.classList.toggle('active',n===name)});
+}
+function ensureAudio(){
+  if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+  if(actx&&actx.state==='suspended')actx.resume();
+}
+function tone(f,d,type='sine',delay=0,v=.12){
+  if(!actx||muted)return;
+  const s=actx.currentTime+delay,o=actx.createOscillator(),g=actx.createGain();
+  o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.0001,s+d);
+  o.connect(g);g.connect(actx.destination);o.start(s);o.stop(s+d+.02);
+}
+const sfx={
+  key:()=>tone(750,.04,'sine',0,.05),
+  good:()=>{tone(659,.1);tone(880,.16,'sine',.09)},
+  wrong:()=>{tone(200,.2,'square',0,.09);tone(150,.2,'square',.12,.09)},
+  done:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.2,'triangle',i*.12,.14))
+};
+
+function ptsFor(t){
+  let p=5,b=0,s=0,label='';
+  if(t<1){b=3;label='⚡ 閃電快！+3'}
+  else if(t<2){b=2;label='🚀 超快！+2'}
+  else if(t<3){b=1;label='✨ 很快！+1'}
+  if(t>45){s=4;label+=(label?'　':'')+'🐢 超過45秒 −4'}
+  else if(t>15){s=3;label+=(label?'　':'')+'🐌 超過15秒 −3'}
+  else if(t>10){s=2;label+=(label?'　':'')+'🐢 超過10秒 −2'}
+  else if(t>7){s=1;label+=(label?'　':'')+'🐢 超過7秒 −1'}
+  return {pts:p+b-s,label};
+}
+
+function saveRun(){
+  if(done.every(Boolean)){delLS(K_RUN);return}
+  setLS(K_RUN,JSON.stringify({
+    version:8,done,wronged,score,wrongCount,combo,bestCombo,totalMs,savedAt:Date.now()
+  }));
+}
+function loadRun(){
+  try{
+    const s=JSON.parse(getLS(K_RUN,'null'));
+    if(!s||!Array.isArray(s.done)||s.done.length!==TOTAL||s.done.every(Boolean))return false;
+    done=s.done.map(Boolean);
+    wronged=Array.isArray(s.wronged)&&s.wronged.length===TOTAL?s.wronged.map(Boolean):Array(TOTAL).fill(false);
+    score=Number(s.score)||0;wrongCount=Number(s.wrongCount)||0;combo=Number(s.combo)||0;
+    bestCombo=Number(s.bestCombo)||0;totalMs=Number(s.totalMs)||0;
+    return true;
+  }catch(e){return false}
+}
+function hasRun(){
+  try{const s=JSON.parse(getLS(K_RUN,'null'));return !!(s&&Array.isArray(s.done)&&s.done.length===TOTAL&&!s.done.every(Boolean))}
+  catch(e){return false}
+}
+
+function renderAnswer(){
+  const e=$('answer-display');e.textContent=input;e.classList.toggle('filled',input.length>0);
+}
+function setFeedback(t,c=''){const f=$('feedback');f.textContent=t;f.className='feedback'+(c?' '+c:'')}
+function flashOverlay(card,sub='',cls=''){
+  $('overlay-card').textContent=card;$('overlay-card').className='overlay-card '+cls;
+  $('overlay-sub').textContent=sub;$('overlay').classList.add('show');
+}
+function hideOverlay(){$('overlay').classList.remove('show')}
+function startTimer(){qStart=performance.now();cancelAnimationFrame(rafId);loopTimer()}
+function loopTimer(){
+  rafId=requestAnimationFrame(()=>{
+    const t=(performance.now()-qStart)/1000,e=$('timer');
+    e.innerHTML=t.toFixed(1)+'<small style="font-size:1.1rem"> 秒</small>';
+    e.className=t<3?'t-fast':t<=7?'t-ok':t<=15?'t-slow':'t-bad';loopTimer();
+  });
+}
+function updateHUD(){
+  $('score').textContent=score;$('combo').textContent=combo;$('tokens').textContent=starsBalance;
+  const n=doneCount();$('stars').textContent=n;
+  const pct=Math.round(n/TOTAL*100);$('bar-fill').style.width=pct+'%';$('bar-pct').textContent=pct+'%';
+}
+function nextQuestion(){
+  hideOverlay();
+  const remaining=[];for(let i=0;i<TOTAL;i++)if(!done[i])remaining.push(i);
+  if(!remaining.length){finish();return}
+  curIdx=remaining[Math.floor(Math.random()*remaining.length)];
+  const q=qOf(curIdx),red=wronged[curIdx];
+  $('q-text').textContent=q.a+' × '+q.b;
+  $('q-wrap').classList.toggle('red',red);
+  $('red-badge').style.display=red?'block':'none';
+  input='';renderAnswer();setFeedback();locked=false;
+  saveRun();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(!locked&&curIdx>=0)startTimer()}));
+}
+function beginGame(resume){
+  if(!resume){
+    done=Array(TOTAL).fill(false);wronged=Array(TOTAL).fill(false);
+    score=0;wrongCount=0;combo=0;bestCombo=0;totalMs=0;
+  }
+  $('stars-total').textContent='/132';updateHUD();show('game');nextQuestion();
+}
+function submitAnswer(){
+  if(locked)return;
+  if(input===''){setFeedback('先按數字鍵輸入答案哦！','warn');return}
+  const q=qOf(curIdx),player=parseInt(input,10),t=(performance.now()-qStart)/1000;
+  totalMs+=t*1000;locked=true;cancelAnimationFrame(rafId);
+  if(player===q.a*q.b){
+    const r=ptsFor(t),wasWrong=wronged[curIdx];
+    done[curIdx]=true;wronged[curIdx]=false;
+    score+=r.pts;combo++;bestCombo=Math.max(bestCombo,combo);
+    starsBalance++;setLS(K_STARS,String(starsBalance));
+    setLS(K_LIFETIME_STARS,String((parseInt(getLS(K_LIFETIME_STARS,'0'),10)||0)+1));
+    updateHUD();saveRun();sfx.good();
+    flashOverlay('+'+r.pts+' 分'+(r.pts>=8?' 🎉':''),[r.label,wasWrong?'🔴→⭐ 復仇成功！':'', '⭐ +1'].filter(Boolean).join('　'),'good');
+    setTimeout(nextQuestion,560);
+  }else{
+    wronged[curIdx]=true;wrongCount++;score=Math.max(0,score-1);combo=0;
+    updateHUD();saveRun();sfx.wrong();
+    flashOverlay('−1 分 💥','這題已加入本循環紅色錯題，稍後會再回來！','bad');
+    setTimeout(nextQuestion,850);
+  }
+}
+function pressKey(k){
+  if(locked)return;
+  if(k==='C')input='';
+  else if(k==='B')input=input.slice(0,-1);
+  else if(k==='OK'){submitAnswer();return}
+  else if(input.length<3)input+=k;
+  sfx.key();renderAnswer();
+}
+
+function finish(){
+  cancelAnimationFrame(rafId);delLS(K_RUN);
+  const oldBest=parseInt(getLS(K_BEST,'0'),10)||0,isRecord=score>oldBest;
+  const oldFast=parseInt(getLS(K_FASTEST,'0'),10)||0,isFast=oldFast===0||totalMs<oldFast;
+  if(isRecord)setLS(K_BEST,String(score));
+  if(isFast)setLS(K_FASTEST,String(Math.round(totalMs)));
+
+  const attempts=TOTAL+wrongCount;
+  const accuracy=TOTAL/attempts*100;
+  const perfect=wrongCount===0;
+  let reward=20, parts=['🏁 完成冒險 +20'];
+  if(perfect){reward+=30;parts.push('💯 全對 +30')}
+  else if(accuracy>=90){reward+=10;parts.push('🎯 正確率≥90% +10')}
+  let comboBonus=0;
+  if(bestCombo>=132)comboBonus=25;else if(bestCombo>=100)comboBonus=15;else if(bestCombo>=60)comboBonus=10;else if(bestCombo>=30)comboBonus=5;
+  if(comboBonus){reward+=comboBonus;parts.push('🔥 Combo '+bestCombo+' +'+comboBonus)}
+  if(isRecord){reward+=10;parts.push('🏆 新高分 +10')}
+  if(isFast){reward+=10;parts.push('⚡ 新最快 +10')}
+  starsBalance+=reward;setLS(K_STARS,String(starsBalance));
+  setLS(K_LIFETIME_STARS,String((parseInt(getLS(K_LIFETIME_STARS,'0'),10)||0)+reward));
+
+  const physicalTokens=perfect?2:(accuracy>=95?1:0);
+  const history=readHistory();
+  const entry={n:history.length+1,ts:Date.now(),score,wrongCount,accuracy:Number(accuracy.toFixed(2)),bestCombo,totalMs:Math.round(totalMs),stars:TOTAL+reward,tokens:physicalTokens,isRecord,isFast};
+  history.push(entry);setLS(K_HISTORY,JSON.stringify(history.slice(-200)));
+
+  $('final-score').textContent=score;
+  $('done-title').textContent='🎉 星球征服成功！';
+  $('done-stars').textContent='⭐ 132 / 132 顆星星全部點亮！';
+  $('record-banner').innerHTML=(isRecord?'🎉 <b>新最高分！</b> ':'')+(isFast?'⚡ <b>新最快紀錄！</b> ':'')+'🏆 歷史最高分：<b>'+Math.max(oldBest,score)+'</b>';
+  const mm=Math.floor(totalMs/60000),ss=Math.round(totalMs/1000)%60;
+  $('done-stats').textContent='正確率 '+accuracy.toFixed(1)+'% ・ 答錯 '+wrongCount+' 次 ・ 最佳 Combo '+bestCombo+' ・ '+mm+' 分 '+String(ss).padStart(2,'0')+' 秒';
+  const tokenText=physicalTokens===2?'🪙🪙 全對！本場可兌換 2 枚實體代幣':physicalTokens===1?'🪙 正確率達 95%！本場可兌換 1 枚實體代幣':'本場未達 95%，繼續累積 ⭐ 解鎖圖鑑！';
+  $('token-summary').innerHTML='⭐ 基礎 132　＋　'+parts.join('　')+'<br><b>本場共獲得 '+(TOTAL+reward)+' ⭐</b>　・　目前餘額 <b>'+starsBalance+' ⭐</b><br><span class="reward-token">'+tokenText+'</span>';
+  $('home-best').textContent=Math.max(oldBest,score);$('home-tokens').textContent=starsBalance;
+  sfx.done();show('done');
+}
+function readHistory(){try{const h=JSON.parse(getLS(K_HISTORY,'[]'));return Array.isArray(h)?h:[]}catch(e){return []}}
+function fmtTime(ms){if(!ms)return '—';const sec=Math.round(ms/1000);return Math.floor(sec/60)+'分'+String(sec%60).padStart(2,'0')+'秒'}
+function renderHistory(){
+  const h=readHistory(),n=h.length;
+  const avg=k=>n?h.reduce((a,x)=>a+(Number(x[k])||0),0)/n:0;
+  const best=n?Math.max(...h.map(x=>x.score||0)):0;
+  const fastest=n?Math.min(...h.map(x=>x.totalMs||Infinity)):0;
+  const perfect=h.filter(x=>x.wrongCount===0).length;
+  const tokenTotal=h.reduce((a,x)=>a+(x.tokens||0),0);
+  const lifetime=parseInt(getLS(K_LIFETIME_STARS,'0'),10)||0;
+  const owned=Object.values(readDex()).filter(Boolean).length;
+  $('history-summary').innerHTML='<div class="history-grid">'+[
+    ['🚀 完成冒險',n+' 次'],['✏️ 完成題目',(n*132).toLocaleString()+' 題'],['🎯 平均正確率',n?avg('accuracy').toFixed(1)+'%':'—'],
+    ['🏆 最高分',best+' 分'],['📈 平均分數',n?Math.round(avg('score'))+' 分':'—'],['⚡ 最快完成',fastest?fmtTime(fastest):'—'],
+    ['⏱️ 平均時間',n?fmtTime(avg('totalMs')):'—'],['💯 全對次數',perfect+' 次'],['🔥 最高 Combo',n?Math.max(...h.map(x=>x.bestCombo||0)):'—'],
+    ['⭐ 生涯獲得',lifetime.toLocaleString()],['⭐ 目前餘額',starsBalance.toLocaleString()],['📖 圖鑑進度',owned+' / '+DEX.length],
+    ['🪙 實體代幣資格',tokenTotal+' 枚']
+  ].map(x=>'<div class="history-stat"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div>';
+  const recent=h.slice(-10).reverse();
+  $('history-list').innerHTML='<div class="history-row head"><span>冒險</span><span>正確率</span><span>分數</span><span>⭐</span><span class="hide-sm">🪙</span></div>'+ (recent.length?recent.map(x=>'<div class="history-row"><span>第 '+x.n+' 次 '+(x.isRecord||x.isFast?'✨':'')+'</span><span>'+Number(x.accuracy).toFixed(1)+'%</span><span>'+x.score+'</span><span>+'+x.stars+'</span><span class="hide-sm">'+x.tokens+'</span></div>').join(''):'<div class="modal-text">完成第一場冒險後，紀錄就會出現在這裡。</div>');
+}
+
+function readDex(){try{return JSON.parse(getLS(K_DEX,'{}'))||{}}catch(e){return {}}}
+function renderDex(){
+  const dex=readDex(),owned=Object.keys(dex).filter(k=>dex[k]).length;
+  $('dex-summary').innerHTML='<b>已收集 '+owned+' / '+DEX.length+' 位星球夥伴</b><br>⭐ 可用星星：<b>'+starsBalance+'</b>　・　點擊剪影即可解鎖';
+  const box=$('dex-grid');box.innerHTML='';
+  DEX.forEach(p=>{
+    const unlocked=!!dex[p.id],d=document.createElement('button');
+    d.className='dex-card'+(unlocked?' unlocked':' locked');d.type='button';
+    const number=String(p.id).padStart(3,'0');
+    d.innerHTML=
+      '<div class="creature-frame"><img class="creature-img" src="'+p.img+'" alt="'+(unlocked?p.name:'No.'+number+' 未解鎖夥伴')+'"></div>'+
+      '<div class="dex-number">No.'+number+'</div>'+
+      (unlocked
+        ? '<div class="dex-name">'+p.name+'</div><div class="dex-tier">'+p.rarity+'</div><div class="dex-count">已收集</div>'
+        : '<div class="unlock-cost">'+p.cost+' ⭐</div>');
+    if(!unlocked)d.addEventListener('click',()=>unlockCreature(p.id));
+    box.appendChild(d);
+  });
+  $('home-dex').textContent=owned;$('home-dex-total').textContent=DEX.length;
+}
+function unlockCreature(id){
+  const p=DEX.find(x=>x.id===id),dex=readDex();if(!p||dex[id])return;
+  if(starsBalance<p.cost){flashOverlay('⭐ 星星還不夠','還差 '+(p.cost-starsBalance)+' ⭐ 就能解鎖 '+p.name+'！','bad');return}
+  starsBalance-=p.cost;setLS(K_STARS,String(starsBalance));dex[id]=1;setLS(K_DEX,JSON.stringify(dex));
+  $('home-tokens').textContent=starsBalance;$('tokens').textContent=starsBalance;
+  renderDex();flashOverlay('圖鑑解鎖！ ✨',p.name+' 加入星球夥伴！','good');
+}
+function renderMap(){
+  const g=$('map-grid');g.innerHTML='';
+  let head=document.createElement('div');head.className='map-head';head.textContent='×';g.appendChild(head);
+  for(let b=1;b<=12;b++){let e=document.createElement('div');e.className='map-head';e.textContent='×'+b;g.appendChild(e)}
+  for(let a=2;a<=12;a++){
+    let rh=document.createElement('div');rh.className='map-head';rh.textContent=a+'×';g.appendChild(rh);
+    for(let b=1;b<=12;b++){
+      const i=keyOf(a,b),cell=document.createElement('div');
+      cell.className='map-cell'+(done[i]?' done':wronged[i]?' wrong':'')+(i===curIdx&&$('screen-game').classList.contains('active')?' now':'');
+      cell.textContent=done[i]?'⭐':wronged[i]?'!':'';g.appendChild(cell);
+    }
+  }
+}
+function refreshHome(){
+  $('home-best').textContent=parseInt(getLS(K_BEST,'0'),10)||0;
+  $('home-tokens').textContent=starsBalance;renderDex();
+  const b=$('btn-start');
+  if(hasRun()){
+    const s=JSON.parse(getLS(K_RUN,'null')),n=s.done.filter(Boolean).length;
+    b.textContent='▶ 繼續遊戲 · '+n+' / 132';b.dataset.resume='1';
+  }else{b.textContent='🚀 開始新的冒險';b.dataset.resume='0'}
+}
+
+document.querySelectorAll('.key').forEach(b=>b.addEventListener('click',()=>pressKey(b.dataset.k)));
+document.addEventListener('keydown',e=>{
+  if(!$('screen-game').classList.contains('active'))return;
+  if(e.key>='0'&&e.key<='9')pressKey(e.key);
+  else if(e.key==='Backspace'){e.preventDefault();pressKey('B')}
+  else if(e.key==='Enter')pressKey('OK');else if(e.key==='Escape')pressKey('C');
+});
+$('btn-start').addEventListener('click',()=>{ensureAudio();const resume=$('btn-start').dataset.resume==='1'&&loadRun();beginGame(resume)});
+$('btn-again').addEventListener('click',()=>{ensureAudio();beginGame(false)});
+$('btn-home2').addEventListener('click',()=>{refreshHome();show('home')});
+$('btn-map').addEventListener('click',()=>{renderMap();$('map-modal').classList.add('show')});
+$('btn-dex-home').addEventListener('click',()=>{renderDex();$('dex-modal').classList.add('show')});
+$('btn-dex-done').addEventListener('click',()=>{renderDex();$('dex-modal').classList.add('show')});
+$('btn-history-home').addEventListener('click',()=>{renderHistory();$('history-modal').classList.add('show')});
+$('btn-history-done').addEventListener('click',()=>{renderHistory();$('history-modal').classList.add('show')});
+$('history-close').addEventListener('click',()=>$('history-modal').classList.remove('show'));
+$('dex-close').addEventListener('click',()=>$('dex-modal').classList.remove('show'));
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).classList.remove('show')));
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
+$('btn-quit').addEventListener('click',()=>{cancelAnimationFrame(rafId);locked=true;$('quit-modal').classList.add('show')});
+$('btn-quit-cancel').addEventListener('click',()=>{$('quit-modal').classList.remove('show');locked=false;startTimer()});
+$('btn-quit-ok').addEventListener('click',()=>{$('quit-modal').classList.remove('show');saveRun();refreshHome();show('home')});
+$('btn-mute').addEventListener('click',()=>{muted=!muted;setLS(K_MUTE,muted?'1':'0');ensureAudio();$('btn-mute').textContent=muted?'🔇':'🔊'});
+window.addEventListener('pagehide',saveRun);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&$('screen-game').classList.contains('active'))saveRun()});
+
+(function stars(){
+  for(let i=0;i<26;i++){const s=document.createElement('div');s.className='bgstar';const z=Math.random()*3+1.5;
+  s.style.cssText='width:'+z+'px;height:'+z+'px;left:'+(Math.random()*100)+'vw;top:'+(Math.random()*100)+'vh;animation-delay:'+(Math.random()*3)+'s;';document.body.appendChild(s)}
+})();
+
+$('btn-mute').textContent=muted?'🔇':'🔊';
+refreshHome();show('home');
+
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
+
+
