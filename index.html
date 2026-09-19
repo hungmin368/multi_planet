@@ -433,7 +433,22 @@ body:after{width:100px;height:100px;left:-35px;bottom:13%;background:radial-grad
 #dex-modal .unlock-cost,#dex-modal .dex-count{display:block!important;font-size:.8rem!important;font-weight:900!important;margin-top:4px!important}
 @media(max-width:600px){#dex-modal .dex-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#dex-modal .creature-frame{height:140px!important}}
 </style>
-</head>
+<style id="v31-final-fixes">
+#dex-modal,#history-modal{z-index:10000!important}
+#dex-modal .modal-box,#history-modal .modal-box{position:relative!important;width:min(920px,94vw)!important;max-width:94vw!important;max-height:88dvh!important;box-sizing:border-box!important;overflow:auto!important;-webkit-overflow-scrolling:touch}
+#dex-close,#history-close{position:sticky!important;top:6px!important;margin-left:auto!important;margin-right:0!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;display:flex!important;align-items:center!important;justify-content:center!important;z-index:100!important;border:0!important;border-radius:50%!important;cursor:pointer!important;touch-action:manipulation!important;transform:none!important;font-size:2rem!important;line-height:1!important}
+#dex-modal .creature-frame{height:185px!important;overflow:visible!important}
+#dex-modal .dex-card img,#dex-modal .dex-card img.creature-img{display:block!important;width:148%!important;height:148%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:center!important}
+@media(max-width:600px){
+#dex-modal .modal-box,#history-modal .modal-box{width:96vw!important;max-width:96vw!important;max-height:90dvh!important;padding:10px 10px 22px!important}
+#dex-close,#history-close{top:6px!important;margin-bottom:-38px!important}
+#dex-modal .creature-frame{height:170px!important}
+#dex-modal .dex-card img,#dex-modal .dex-card img.creature-img{width:142%!important;height:142%!important}
+#history-modal .history-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#history-modal .history-row{grid-template-columns:1fr 1fr!important;gap:6px!important}
+#history-modal .history-row.head{display:none!important}
+}
+</style></head>
 <body>
 <div id="app">
 
@@ -670,6 +685,7 @@ function renderAnswer(){
   const e=$('answer-display');e.textContent=input;e.classList.toggle('filled',input.length>0);
 }
 function setFeedback(t,c=''){const f=$('feedback');f.textContent=t;f.className='feedback'+(c?' '+c:'')}
+function hideTransientOverlay(){const e=$('overlay');if(e)e.classList.remove('show');}
 function flashOverlay(card,sub='',cls=''){
   $('overlay-card').textContent=card;$('overlay-card').className='overlay-card '+cls;
   $('overlay-sub').textContent=sub;$('overlay').classList.add('show');
@@ -759,7 +775,8 @@ function finish(){
   starsBalance+=reward;setLS(K_STARS,String(starsBalance));
   setLS(K_LIFETIME_STARS,String((parseInt(getLS(K_LIFETIME_STARS,'0'),10)||0)+reward));
 
-  const physicalTokens=perfect?2:(accuracy>=95?1:0);
+  const withinTokenTime=totalMs<=15*60*1000;
+  const physicalTokens=withinTokenTime?(perfect?2:(accuracy>=95?1:0)):0;
   const history=readHistory();
   const entry={n:history.length+1,ts:Date.now(),score,wrongCount,accuracy:Number(accuracy.toFixed(2)),bestCombo,totalMs:Math.round(totalMs),stars:TOTAL+reward,tokens:physicalTokens,isRecord,isFast};
   history.push(entry);setLS(K_HISTORY,JSON.stringify(history.slice(-200)));
@@ -770,7 +787,7 @@ function finish(){
   $('record-banner').innerHTML=(isRecord?'🎉 <b>新最高分！</b> ':'')+(isFast?'⚡ <b>新最快紀錄！</b> ':'')+'🏆 歷史最高分：<b>'+Math.max(oldBest,score)+'</b>';
   const mm=Math.floor(totalMs/60000),ss=Math.round(totalMs/1000)%60;
   $('done-stats').textContent='正確率 '+accuracy.toFixed(1)+'% ・ 答錯 '+wrongCount+' 次 ・ 最佳 Combo '+bestCombo+' ・ '+mm+' 分 '+String(ss).padStart(2,'0')+' 秒';
-  const tokenText=physicalTokens===2?'🪙🪙 全對！本場可兌換 2 枚實體代幣':physicalTokens===1?'🪙 正確率達 95%！本場可兌換 1 枚實體代幣':'本場未達 95%，繼續累積 ⭐ 解鎖圖鑑！';
+  const tokenText=!withinTokenTime?'⏱️ 本場超過 15 分鐘，不獲得實體代幣':physicalTokens===2?'🪙🪙 全對！本場可兌換 2 枚實體代幣':physicalTokens===1?'🪙 正確率達 95%！本場可兌換 1 枚實體代幣':'本場未達 95%，繼續累積 ⭐ 解鎖圖鑑！';
   $('token-summary').innerHTML='⭐ 基礎 132　＋　'+parts.join('　')+'<br><b>本場共獲得 '+(TOTAL+reward)+' ⭐</b>　・　目前餘額 <b>'+starsBalance+' ⭐</b><br><span class="reward-token">'+tokenText+'</span>';
   $('home-best').textContent=Math.max(oldBest,score);$('home-tokens').textContent=starsBalance;
   sfx.done();show('done');
@@ -858,10 +875,10 @@ $('btn-start').addEventListener('click',()=>{ensureAudio();const resume=$('btn-s
 $('btn-again').addEventListener('click',()=>{ensureAudio();beginGame(false)});
 $('btn-home2').addEventListener('click',()=>{refreshHome();show('home')});
 $('btn-map').addEventListener('click',()=>{renderMap();$('map-modal').classList.add('show')});
-$('btn-dex-home').addEventListener('click',()=>{renderDex();$('dex-modal').classList.add('show')});
-$('btn-dex-done').addEventListener('click',()=>{renderDex();$('dex-modal').classList.add('show')});
-$('btn-history-home').addEventListener('click',()=>{renderHistory();$('history-modal').classList.add('show')});
-$('btn-history-done').addEventListener('click',()=>{renderHistory();$('history-modal').classList.add('show')});
+$('btn-dex-home').addEventListener('click',()=>{hideTransientOverlay();renderDex();$('dex-modal').classList.add('show')});
+$('btn-dex-done').addEventListener('click',()=>{hideTransientOverlay();renderDex();$('dex-modal').classList.add('show')});
+$('btn-history-home').addEventListener('click',()=>{hideTransientOverlay();renderHistory();$('history-modal').classList.add('show')});
+$('btn-history-done').addEventListener('click',()=>{hideTransientOverlay();renderHistory();$('history-modal').classList.add('show')});
 $('history-close').addEventListener('click',()=>$('history-modal').classList.remove('show'));
 $('dex-close').addEventListener('click',()=>$('dex-modal').classList.remove('show'));
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).classList.remove('show')));
